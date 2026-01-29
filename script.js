@@ -13,14 +13,24 @@ class SnakeGame {
         this.touchStartX = 0;
         this.touchStartY = 0;
 
-        // Keyboard controls
+        // 禁用浏览器默认触摸行为
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+        this.canvas.style.touchAction = 'none';
+
+        // 阻止默认触摸滑动和缩放
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        // 键盘控制
         document.addEventListener('keydown', this.changeDirection.bind(this));
         
-        // Touch controls
-        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), false);
-        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), false);
+        // 触摸控制
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
         
-        // Mobile-friendly start button
+        // 移动端友好的开始按钮
         document.getElementById('startButton').addEventListener('click', this.startGame.bind(this));
     }
 
@@ -31,6 +41,7 @@ class SnakeGame {
     }
 
     handleTouchMove(event) {
+        event.preventDefault();
         if (!this.touchStartX || !this.touchStartY) {
             return;
         }
@@ -41,21 +52,16 @@ class SnakeGame {
         const diffX = touchEndX - this.touchStartX;
         const diffY = touchEndY - this.touchStartY;
 
-        // 检查滑动方向
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-            // 水平滑动
-            if (diffX > 0) {
-                this.moveRight();
-            } else {
-                this.moveLeft();
-            }
+        // 计算角度和方向
+        const angle = Math.abs(Math.atan2(diffY, diffX) * 180 / Math.PI);
+
+        // 根据角度判断滑动方向
+        if (angle > 45 && angle < 135) {
+            // 垂直方向
+            diffY > 0 ? this.moveDown() : this.moveUp();
         } else {
-            // 垂直滑动
-            if (diffY > 0) {
-                this.moveDown();
-            } else {
-                this.moveUp();
-            }
+            // 水平方向
+            diffX > 0 ? this.moveRight() : this.moveLeft();
         }
 
         // 重置触摸起始点
@@ -104,7 +110,7 @@ class SnakeGame {
         this.snake = [{x: 10, y: 10}];
         this.food = this.generateFood();
         this.score = 0;
-        document.getElementById('score').textContent = this.score;
+        document.getElementById('score').textContent = `Score: ${this.score}`;
         this.gameOver = false;
         this.dx = 0;
         this.dy = 0;
@@ -161,13 +167,16 @@ class SnakeGame {
     }
 
     clearCanvas() {
-        this.ctx.fillStyle = '#2980b9';
+        this.ctx.fillStyle = 'rgba(41, 128, 185, 0.8)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     drawFood() {
         this.ctx.fillStyle = '#e74c3c';
+        this.ctx.shadowColor = 'rgba(231, 76, 60, 0.5)';
+        this.ctx.shadowBlur = 10;
         this.ctx.fillRect(this.food.x, this.food.y, this.gridSize, this.gridSize);
+        this.ctx.shadowBlur = 0;
     }
 
     moveSnake() {
@@ -176,8 +185,15 @@ class SnakeGame {
 
         if (this.snake[0].x === this.food.x && this.snake[0].y === this.food.y) {
             this.score += 1;
-            document.getElementById('score').textContent = this.score;
+            document.getElementById('score').textContent = `Score: ${this.score}`;
             this.food = this.generateFood();
+            
+            // 吃到食物时的庆祝效果
+            confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
         } else {
             this.snake.pop();
         }
@@ -185,9 +201,12 @@ class SnakeGame {
 
     drawSnake() {
         this.ctx.fillStyle = '#2ecc71';
+        this.ctx.shadowColor = 'rgba(46, 204, 113, 0.5)';
+        this.ctx.shadowBlur = 10;
         this.snake.forEach(segment => {
             this.ctx.fillRect(segment.x, segment.y, this.gridSize, this.gridSize);
         });
+        this.ctx.shadowBlur = 0;
     }
 
     checkCollision() {
@@ -197,20 +216,29 @@ class SnakeGame {
         if (head.x < 0 || head.x >= this.canvas.width || 
             head.y < 0 || head.y >= this.canvas.height) {
             this.gameOver = true;
-            alert('Game Over! Your score: ' + this.score);
+            this.showGameOverEffect();
         }
 
         // Self collision
         for (let i = 1; i < this.snake.length; i++) {
             if (head.x === this.snake[i].x && head.y === this.snake[i].y) {
                 this.gameOver = true;
-                alert('Game Over! Your score: ' + this.score);
+                this.showGameOverEffect();
             }
         }
     }
+
+    showGameOverEffect() {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        alert(`Game Over! Your score: ${this.score}`);
+    }
 }
 
-// Initialize the game when the page loads
+// 初始化游戏
 window.onload = () => {
     const game = new SnakeGame('gameCanvas');
 };
