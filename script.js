@@ -9,12 +9,12 @@ class SnakeGame {
         this.dx = 0;
         this.dy = 0;
         this.score = 0;
-        this.gameOver = true;  // 默认为游戏未开始状态
+        this.gameOver = true;
         this.touchStartX = 0;
         this.touchStartY = 0;
 
         // 游戏速度控制
-        this.baseSpeed = 300;  // 更慢的初始速度
+        this.baseSpeed = 300;
         this.currentSpeed = this.baseSpeed;
 
         // 禁用浏览器默认触摸行为
@@ -34,28 +34,24 @@ class SnakeGame {
         this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
         this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
         
-        // 移动端友好的开始按钮
+        // 开始按钮
         document.getElementById('startButton').addEventListener('click', this.startGame.bind(this));
     }
 
     startGame() {
-        if (!this.gameOver) return;  // 防止重复开始
+        if (!this.gameOver) return;
 
-        // 重置游戏状态
         this.snake = [{x: 10, y: 10}];
         this.score = 0;
         this.gameOver = false;
-        this.dx = this.gridSize;  // 默认向右移动
+        this.dx = this.gridSize;
         this.dy = 0;
         this.currentSpeed = this.baseSpeed;
         
-        // 生成第一个食物
         this.generateFood();
         
-        // 更新分数显示
         document.getElementById('score').textContent = `Score: ${this.score}`;
         
-        // 开始游戏循环
         this.gameLoop();
     }
 
@@ -145,7 +141,7 @@ class SnakeGame {
 
     changeDirection(event) {
         if (this.gameOver) {
-            if (event.keyCode === 13 || event.keyCode === 32) {  // Enter or Space
+            if (event.keyCode === 13 || event.keyCode === 32) {
                 this.startGame();
             }
             return;
@@ -204,8 +200,8 @@ class SnakeGame {
         const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
         this.snake.unshift(head);
 
-        // 检查是否吃到食物
-        if (this.food && this.snake[0].x === this.food.x && this.snake[0].y === this.food.y) {
+        // 更精确的食物碰撞检测
+        if (this.food && this.isSnakeOverlappingFood()) {
             this.score++;
             document.getElementById('score').textContent = `Score: ${this.score}`;
             
@@ -227,6 +223,15 @@ class SnakeGame {
             // 如果没吃到食物，移除尾部
             this.snake.pop();
         }
+    }
+
+    // 新增：更精确的食物碰撞检测
+    isSnakeOverlappingFood() {
+        const head = this.snake[0];
+        return (
+            head.x === this.food.x && 
+            head.y === this.food.y
+        );
     }
 
     drawSnake() {
