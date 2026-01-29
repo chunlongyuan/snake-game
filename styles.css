@@ -6,6 +6,7 @@ body {
     margin: 0;
     background-color: #2c3e50;
     font-family: Arial, sans-serif;
+    touch-action: manipulation; /* 禁用浏览器默认手势 */
 }
 
 .game-container {
@@ -19,6 +20,8 @@ body {
 #gameCanvas {
     border: 2px solid #3498db;
     background-color: #2980b9;
+    max-width: 100%;
+    touch-action: none; /* 阻止默认触摸行为 */
 }
 
 .game-info {
@@ -38,9 +41,23 @@ body {
     margin: 4px 2px;
     cursor: pointer;
     border-radius: 5px;
+    touch-action: manipulation; /* 优化触摸 */
 }
 
 #score {
     font-weight: bold;
     margin-right: 20px;
+}
+
+/* 移动设备响应式 */
+@media (max-width: 600px) {
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+    }
+    
+    .game-container {
+        width: 95%;
+        padding: 10px;
+    }
 }

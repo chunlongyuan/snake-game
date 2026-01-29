@@ -10,9 +10,85 @@ class SnakeGame {
         this.dy = 0;
         this.score = 0;
         this.gameOver = false;
+        this.touchStartX = 0;
+        this.touchStartY = 0;
 
+        // Keyboard controls
         document.addEventListener('keydown', this.changeDirection.bind(this));
+        
+        // Touch controls
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), false);
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), false);
+        
+        // Mobile-friendly start button
         document.getElementById('startButton').addEventListener('click', this.startGame.bind(this));
+    }
+
+    handleTouchStart(event) {
+        event.preventDefault();
+        this.touchStartX = event.touches[0].clientX;
+        this.touchStartY = event.touches[0].clientY;
+    }
+
+    handleTouchMove(event) {
+        if (!this.touchStartX || !this.touchStartY) {
+            return;
+        }
+
+        const touchEndX = event.touches[0].clientX;
+        const touchEndY = event.touches[0].clientY;
+
+        const diffX = touchEndX - this.touchStartX;
+        const diffY = touchEndY - this.touchStartY;
+
+        // 检查滑动方向
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // 水平滑动
+            if (diffX > 0) {
+                this.moveRight();
+            } else {
+                this.moveLeft();
+            }
+        } else {
+            // 垂直滑动
+            if (diffY > 0) {
+                this.moveDown();
+            } else {
+                this.moveUp();
+            }
+        }
+
+        // 重置触摸起始点
+        this.touchStartX = 0;
+        this.touchStartY = 0;
+    }
+
+    moveLeft() {
+        if (this.dx !== this.gridSize) {
+            this.dx = -this.gridSize;
+            this.dy = 0;
+        }
+    }
+
+    moveRight() {
+        if (this.dx !== -this.gridSize) {
+            this.dx = this.gridSize;
+            this.dy = 0;
+        }
+    }
+
+    moveUp() {
+        if (this.dy !== this.gridSize) {
+            this.dx = 0;
+            this.dy = -this.gridSize;
+        }
+    }
+
+    moveDown() {
+        if (this.dy !== -this.gridSize) {
+            this.dx = 0;
+            this.dy = this.gridSize;
+        }
     }
 
     startGame() {
