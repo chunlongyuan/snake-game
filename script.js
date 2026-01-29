@@ -13,6 +13,11 @@ class SnakeGame {
         this.touchStartX = 0;
         this.touchStartY = 0;
 
+        // 游戏速度控制
+        this.baseSpeed = 250;  // 初始速度更慢
+        this.speedIncreaseThreshold = 5;  // 每增加5分增加速度
+        this.currentSpeed = this.baseSpeed;
+
         // 禁用浏览器默认触摸行为
         document.body.style.overflow = 'hidden';
         document.body.style.touchAction = 'none';
@@ -101,8 +106,10 @@ class SnakeGame {
         if (this.gameOver) {
             this.resetGame();
         }
+        // 初始方向和速度
         this.dx = this.gridSize;
         this.dy = 0;
+        this.currentSpeed = this.baseSpeed;
         this.gameLoop();
     }
 
@@ -114,13 +121,20 @@ class SnakeGame {
         this.gameOver = false;
         this.dx = 0;
         this.dy = 0;
+        this.currentSpeed = this.baseSpeed;
     }
 
     generateFood() {
-        return {
-            x: Math.floor(Math.random() * this.tileCount) * this.gridSize,
-            y: Math.floor(Math.random() * this.tileCount) * this.gridSize
-        };
+        let newFood;
+        do {
+            newFood = {
+                x: Math.floor(Math.random() * this.tileCount) * this.gridSize,
+                y: Math.floor(Math.random() * this.tileCount) * this.gridSize
+            };
+        } while (this.snake.some(segment => 
+            segment.x === newFood.x && segment.y === newFood.y
+        ));
+        return newFood;
     }
 
     changeDirection(event) {
@@ -163,7 +177,7 @@ class SnakeGame {
             this.drawSnake();
             this.checkCollision();
             this.gameLoop();
-        }, 100);
+        }, this.currentSpeed);
     }
 
     clearCanvas() {
@@ -187,6 +201,11 @@ class SnakeGame {
             this.score += 1;
             document.getElementById('score').textContent = `Score: ${this.score}`;
             this.food = this.generateFood();
+            
+            // 根据分数动态调整速度
+            if (this.score % this.speedIncreaseThreshold === 0) {
+                this.currentSpeed = Math.max(50, this.currentSpeed - 20);  // 速度逐渐加快，但不低于50ms
+            }
             
             // 吃到食物时的庆祝效果
             confetti({
