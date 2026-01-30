@@ -10,9 +10,86 @@ class SnakeGame {
         this.dy = 0;
         this.score = 0;
         this.gameOver = true;
+        this.touchStartX = 0;
+        this.touchStartY = 0;
 
+        // 阻止默认触摸行为
+        document.body.style.touchAction = 'none';
+        this.canvas.style.touchAction = 'none';
+
+        // 事件监听
         document.getElementById('startButton').addEventListener('click', this.startGame.bind(this));
         document.addEventListener('keydown', this.changeDirection.bind(this));
+        
+        // 触摸控制
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
+        document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    }
+
+    handleTouchStart(event) {
+        event.preventDefault();
+        if (this.gameOver) {
+            this.startGame();
+            return;
+        }
+        
+        this.touchStartX = event.touches[0].clientX;
+        this.touchStartY = event.touches[0].clientY;
+    }
+
+    handleTouchMove(event) {
+        event.preventDefault();
+        if (this.gameOver) return;
+
+        const touchEndX = event.touches[0].clientX;
+        const touchEndY = event.touches[0].clientY;
+
+        const diffX = touchEndX - this.touchStartX;
+        const diffY = touchEndY - this.touchStartY;
+
+        // 根据滑动角度判断方向
+        const angle = Math.abs(Math.atan2(diffY, diffX) * 180 / Math.PI);
+
+        if (angle > 45 && angle < 135) {
+            // 垂直方向
+            diffY > 0 ? this.moveDown() : this.moveUp();
+        } else {
+            // 水平方向
+            diffX > 0 ? this.moveRight() : this.moveLeft();
+        }
+
+        // 重置起始点
+        this.touchStartX = touchEndX;
+        this.touchStartY = touchEndY;
+    }
+
+    moveLeft() {
+        if (this.dx === 0) { 
+            this.dx = -this.gridSize; 
+            this.dy = 0; 
+        }
+    }
+
+    moveRight() {
+        if (this.dx === 0) { 
+            this.dx = this.gridSize; 
+            this.dy = 0; 
+        }
+    }
+
+    moveUp() {
+        if (this.dy === 0) { 
+            this.dx = 0; 
+            this.dy = -this.gridSize; 
+        }
+    }
+
+    moveDown() {
+        if (this.dy === 0) { 
+            this.dx = 0; 
+            this.dy = this.gridSize; 
+        }
     }
 
     startGame() {
@@ -51,16 +128,16 @@ class SnakeGame {
         const LEFT_KEY = 37, RIGHT_KEY = 39, UP_KEY = 38, DOWN_KEY = 40;
         switch(event.keyCode) {
             case LEFT_KEY: 
-                if (this.dx === 0) { this.dx = -this.gridSize; this.dy = 0; }
+                this.moveLeft();
                 break;
             case RIGHT_KEY:
-                if (this.dx === 0) { this.dx = this.gridSize; this.dy = 0; }
+                this.moveRight();
                 break;
             case UP_KEY:
-                if (this.dy === 0) { this.dx = 0; this.dy = -this.gridSize; }
+                this.moveUp();
                 break;
             case DOWN_KEY:
-                if (this.dy === 0) { this.dx = 0; this.dy = this.gridSize; }
+                this.moveDown();
                 break;
         }
     }
@@ -74,9 +151,6 @@ class SnakeGame {
             this.score++;
             document.getElementById('score').textContent = `Score: ${this.score}`;
             this.generateFood();
-            
-            // 可选：随食物增加难度
-            // this.increaseSpeed();
         } else {
             this.snake.pop();
         }
