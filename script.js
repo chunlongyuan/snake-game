@@ -10,133 +10,34 @@ class SnakeGame {
         this.dy = 0;
         this.score = 0;
         this.gameOver = true;
-        this.touchStartX = 0;
-        this.touchStartY = 0;
 
-        // 游戏速度控制
-        this.baseSpeed = 300;
-        this.currentSpeed = this.baseSpeed;
-
-        // 禁用浏览器默认触摸行为
-        document.body.style.overflow = 'hidden';
-        document.body.style.touchAction = 'none';
-        this.canvas.style.touchAction = 'none';
-
-        // 阻止默认触摸滑动和缩放
-        document.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-        }, { passive: false });
-
-        // 键盘控制
-        document.addEventListener('keydown', this.changeDirection.bind(this));
-        
-        // 触摸控制
-        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this), { passive: false });
-        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this), { passive: false });
-        
-        // 开始按钮
         document.getElementById('startButton').addEventListener('click', this.startGame.bind(this));
+        document.addEventListener('keydown', this.changeDirection.bind(this));
     }
 
     startGame() {
-        if (!this.gameOver) return;
-
         this.snake = [{x: 10, y: 10}];
         this.score = 0;
         this.gameOver = false;
         this.dx = this.gridSize;
         this.dy = 0;
-        this.currentSpeed = this.baseSpeed;
-        
-        this.generateFood();
-        
         document.getElementById('score').textContent = `Score: ${this.score}`;
-        
+        this.generateFood();
         this.gameLoop();
     }
 
     generateFood() {
-        let newFood;
-        let collision;
+        // 确保食物不会在蛇身上生成
+        let foodPosition;
         do {
-            collision = false;
-            newFood = {
+            foodPosition = {
                 x: Math.floor(Math.random() * this.tileCount) * this.gridSize,
                 y: Math.floor(Math.random() * this.tileCount) * this.gridSize
             };
-
-            // 检查食物是否与蛇身重叠
-            for (let segment of this.snake) {
-                if (segment.x === newFood.x && segment.y === newFood.y) {
-                    collision = true;
-                    break;
-                }
-            }
-        } while (collision);
-
-        this.food = newFood;
-    }
-
-    handleTouchStart(event) {
-        event.preventDefault();
-        if (this.gameOver) {
-            this.startGame();
-            return;
-        }
-        this.touchStartX = event.touches[0].clientX;
-        this.touchStartY = event.touches[0].clientY;
-    }
-
-    handleTouchMove(event) {
-        event.preventDefault();
-        if (this.gameOver || !this.touchStartX || !this.touchStartY) return;
-
-        const touchEndX = event.touches[0].clientX;
-        const touchEndY = event.touches[0].clientY;
-
-        const diffX = touchEndX - this.touchStartX;
-        const diffY = touchEndY - this.touchStartY;
-
-        // 根据滑动方向改变蛇的方向
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-            // 水平滑动
-            diffX > 0 ? this.moveRight() : this.moveLeft();
-        } else {
-            // 垂直滑动
-            diffY > 0 ? this.moveDown() : this.moveUp();
-        }
-
-        // 重置触摸起始点
-        this.touchStartX = 0;
-        this.touchStartY = 0;
-    }
-
-    moveLeft() {
-        if (this.dx === 0) {
-            this.dx = -this.gridSize;
-            this.dy = 0;
-        }
-    }
-
-    moveRight() {
-        if (this.dx === 0) {
-            this.dx = this.gridSize;
-            this.dy = 0;
-        }
-    }
-
-    moveUp() {
-        if (this.dy === 0) {
-            this.dx = 0;
-            this.dy = -this.gridSize;
-        }
-    }
-
-    moveDown() {
-        if (this.dy === 0) {
-            this.dx = 0;
-            this.dy = this.gridSize;
-        }
+        } while (this.snake.some(segment => 
+            segment.x === foodPosition.x && segment.y === foodPosition.y
+        ));
+        this.food = foodPosition;
     }
 
     changeDirection(event) {
@@ -147,131 +48,94 @@ class SnakeGame {
             return;
         }
 
-        const LEFT_KEY = 37;
-        const RIGHT_KEY = 39;
-        const UP_KEY = 38;
-        const DOWN_KEY = 40;
-
-        const keyPressed = event.keyCode;
-        switch(keyPressed) {
-            case LEFT_KEY:
-                this.moveLeft();
-                break;
-            case UP_KEY:
-                this.moveUp();
+        const LEFT_KEY = 37, RIGHT_KEY = 39, UP_KEY = 38, DOWN_KEY = 40;
+        switch(event.keyCode) {
+            case LEFT_KEY: 
+                if (this.dx === 0) { this.dx = -this.gridSize; this.dy = 0; }
                 break;
             case RIGHT_KEY:
-                this.moveRight();
+                if (this.dx === 0) { this.dx = this.gridSize; this.dy = 0; }
+                break;
+            case UP_KEY:
+                if (this.dy === 0) { this.dx = 0; this.dy = -this.gridSize; }
                 break;
             case DOWN_KEY:
-                this.moveDown();
+                if (this.dy === 0) { this.dx = 0; this.dy = this.gridSize; }
                 break;
         }
-    }
-
-    gameLoop() {
-        if (this.gameOver) return;
-
-        setTimeout(() => {
-            this.clearCanvas();
-            this.moveSnake();
-            this.drawFood();
-            this.drawSnake();
-            this.checkCollision();
-            this.gameLoop();
-        }, this.currentSpeed);
-    }
-
-    clearCanvas() {
-        this.ctx.fillStyle = 'rgba(41, 128, 185, 0.8)';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    }
-
-    drawFood() {
-        if (!this.food) return;
-        this.ctx.fillStyle = '#e74c3c';
-        this.ctx.shadowColor = 'rgba(231, 76, 60, 0.5)';
-        this.ctx.shadowBlur = 10;
-        this.ctx.fillRect(this.food.x, this.food.y, this.gridSize, this.gridSize);
-        this.ctx.shadowBlur = 0;
     }
 
     moveSnake() {
         const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
         this.snake.unshift(head);
 
-        // 更精确的食物碰撞检测
-        if (this.food && this.isSnakeOverlappingFood()) {
+        // 精确的食物吃掉检测
+        if (this.checkFoodCollision()) {
             this.score++;
             document.getElementById('score').textContent = `Score: ${this.score}`;
-            
-            // 生成新的食物
             this.generateFood();
-
-            // 加速
-            if (this.score % 5 === 0) {
-                this.currentSpeed = Math.max(100, this.currentSpeed - 20);
-            }
-
-            // 庆祝特效
-            confetti({
-                particleCount: 50,
-                spread: 70,
-                origin: { y: 0.6 }
-            });
+            
+            // 可选：随食物增加难度
+            // this.increaseSpeed();
         } else {
-            // 如果没吃到食物，移除尾部
             this.snake.pop();
         }
     }
 
-    // 新增：更精确的食物碰撞检测
-    isSnakeOverlappingFood() {
+    // 精确的食物碰撞检测
+    checkFoodCollision() {
         const head = this.snake[0];
-        return (
-            head.x === this.food.x && 
-            head.y === this.food.y
-        );
+        return head.x === this.food.x && head.y === this.food.y;
     }
 
-    drawSnake() {
-        this.ctx.fillStyle = '#2ecc71';
-        this.ctx.shadowColor = 'rgba(46, 204, 113, 0.5)';
-        this.ctx.shadowBlur = 10;
-        this.snake.forEach(segment => {
-            this.ctx.fillRect(segment.x, segment.y, this.gridSize, this.gridSize);
-        });
-        this.ctx.shadowBlur = 0;
+    gameLoop() {
+        if (this.gameOver) return;
+
+        this.moveSnake();
+        this.checkCollisions();
+        this.draw();
+
+        setTimeout(() => this.gameLoop(), 200);
     }
 
-    checkCollision() {
+    checkCollisions() {
         const head = this.snake[0];
 
         // 墙壁碰撞
         if (head.x < 0 || head.x >= this.canvas.width || 
             head.y < 0 || head.y >= this.canvas.height) {
             this.gameOver = true;
-            this.showGameOverEffect();
-            return;
+            this.endGame();
         }
 
         // 自身碰撞
         for (let i = 1; i < this.snake.length; i++) {
             if (head.x === this.snake[i].x && head.y === this.snake[i].y) {
                 this.gameOver = true;
-                this.showGameOverEffect();
-                return;
+                this.endGame();
+                break;
             }
         }
     }
 
-    showGameOverEffect() {
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
+    draw() {
+        // 清空画布
+        this.ctx.fillStyle = '#2980b9';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 绘制食物
+        this.ctx.fillStyle = '#e74c3c';
+        this.ctx.fillRect(this.food.x, this.food.y, this.gridSize, this.gridSize);
+
+        // 绘制蛇
+        this.ctx.fillStyle = '#2ecc71';
+        this.snake.forEach(segment => {
+            this.ctx.fillRect(segment.x, segment.y, this.gridSize, this.gridSize);
         });
-        alert(`Game Over! Your score: ${this.score}`);
+    }
+
+    endGame() {
+        alert(`Game Over! Score: ${this.score}`);
     }
 }
 
